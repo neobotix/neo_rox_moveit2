@@ -8,12 +8,12 @@ scaled_joint_trajectory_controller:
   type: FollowJointTrajectory
   default: true
   joints:
-    - ur10shoulder_pan_joint
-    - ur10shoulder_lift_joint
-    - ur10elbow_joint
-    - ur10wrist_1_joint
-    - ur10wrist_2_joint
-    - ur10wrist_3_joint
+    - ur5eshoulder_pan_joint
+    - ur5eshoulder_lift_joint
+    - ur5eelbow_joint
+    - ur5ewrist_1_joint
+    - ur5ewrist_2_joint
+    - ur5ewrist_3_joint
 
 
 joint_trajectory_controller:
@@ -21,9 +21,9 @@ joint_trajectory_controller:
   type: FollowJointTrajectory
   default: false
   joints:
-    - ur10shoulder_pan_joint
-    - ur10shoulder_lift_joint
-    - ur10elbow_joint
-    - ur10wrist_1_joint
-    - ur10wrist_2_joint
-    - ur10wrist_3_joint
+    - ur5eshoulder_pan_joint
+    - ur5eshoulder_lift_joint
+    - ur5eelbow_joint
+    - ur5ewrist_1_joint
+    - ur5ewrist_2_joint
+    - ur5ewrist_3_joint

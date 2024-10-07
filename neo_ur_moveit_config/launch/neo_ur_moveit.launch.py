@@ -53,6 +53,7 @@ def launch_setup(context, *args, **kwargs):
     safety_k_position = LaunchConfiguration("safety_k_position")
     # General arguments
     description_package = LaunchConfiguration("description_package")
+    moveit_joint_limits_file = LaunchConfiguration("moveit_joint_limits_file")
     description_file = LaunchConfiguration("description_file")
     moveit_config_package = LaunchConfiguration("moveit_config_package")
     moveit_config_file = LaunchConfiguration("moveit_config_file")
@@ -103,9 +104,12 @@ def launch_setup(context, *args, **kwargs):
         [FindPackageShare(moveit_config_package), "config", "kinematics.yaml"]
     )
 
-    # robot_description_planning = {
-    # "robot_description_planning": load_yaml_abs(str(joint_limit_params.perform(context)))
-    # }
+    robot_description_planning = {
+        "robot_description_planning": load_yaml(
+            str(moveit_config_package.perform(context)),
+            os.path.join("config", str(moveit_joint_limits_file.perform(context))),
+        )
+    }
 
     # Planning Configuration
     ompl_planning_pipeline_config = {
@@ -155,7 +159,7 @@ def launch_setup(context, *args, **kwargs):
             robot_description,
             robot_description_semantic,
             robot_description_kinematics,
-            # robot_description_planning,
+            robot_description_planning,
             ompl_planning_pipeline_config,
             trajectory_execution,
             moveit_controllers,
@@ -273,6 +277,14 @@ def generate_launch_description():
             description="Make MoveIt to use simulation time. This is needed for the trajectory planing in simulation.",
         )
     )
+    
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "moveit_joint_limits_file",
+            default_value="ur5e_joint_limits.yaml",
+            description="MoveIt joint limits that augment or override the values from the URDF robot_description.",
+        )
+    )
     declared_arguments.append(
         DeclareLaunchArgument(
             "prefix",
@@ -284,9 +296,6 @@ def generate_launch_description():
     )
     declared_arguments.append(
         DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz?")
-    )
-    declared_arguments.append(
-        DeclareLaunchArgument("launch_servo", default_value="true", description="Launch Servo?")
     )
 
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])

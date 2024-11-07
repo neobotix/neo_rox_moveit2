@@ -80,8 +80,10 @@ def launch_setup(context, *args, **kwargs):
         'rox.urdf.xacro')
    
     robot_description_content = Command([
-            "xacro", " ", urdf, " ", 'arm_type:=',
-            ur_type,
+            "xacro", " ", urdf, " ", 
+            'arm_type:=', ur_type, " ",
+            'use_gz:=', 'true', " ",
+
             ])
 
     robot_description = {"robot_description": robot_description_content}
@@ -132,7 +134,7 @@ def launch_setup(context, *args, **kwargs):
             "start_state_max_bounds_error": 0.1,
         }
     }
-    ompl_planning_yaml = load_yaml("neo_rox_moveit2", "config/ompl_planning.yaml")
+    ompl_planning_yaml = load_yaml(str(moveit_config_package.perform(context)), "config/ompl_planning.yaml")
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
 
     # Trajectory Execution Configuration
@@ -156,11 +158,11 @@ def launch_setup(context, *args, **kwargs):
     # the scaled_joint_trajectory_controller does not work on fake hardware
     change_controllers = context.perform_substitution(use_fake_hardware)
     if change_controllers == "true":
-        controllers_yaml["scaled_joint_trajectory_controller"]["default"] = False
-        controllers_yaml["joint_trajectory_controller"]["default"] = True
+        controllers_yaml_with_substitutions["scaled_joint_trajectory_controller"]["default"] = False
+        controllers_yaml_with_substitutions["joint_trajectory_controller"]["default"] = True
 
     moveit_controllers = {
-        "moveit_simple_controller_manager": controllers_yaml,
+        "moveit_simple_controller_manager": controllers_yaml_with_substitutions,
         "moveit_controller_manager": "moveit_simple_controller_manager/MoveItSimpleControllerManager",
     }
 
@@ -309,7 +311,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "moveit_joint_limits_file",
-            default_value="ur5e_joint_limits.yaml",
+            default_value="joint_limits.yaml",
             description="MoveIt joint limits that augment or override the values from the URDF robot_description.",
         )
     )

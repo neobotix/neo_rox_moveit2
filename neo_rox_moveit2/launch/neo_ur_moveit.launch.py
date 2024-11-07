@@ -61,18 +61,19 @@ def launch_setup(context, *args, **kwargs):
     prefix = LaunchConfiguration("prefix")
     use_sim_time = LaunchConfiguration("use_sim_time")
     launch_rviz = LaunchConfiguration("launch_rviz")
+    ur_dc = LaunchConfiguration("use_ur_dc")
 
     joint_limit_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "joint_limits.yaml"]
+        [FindPackageShare(description_package), "config" "joint_limits.yaml"]
     )
     kinematics_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "default_kinematics.yaml"]
+        [FindPackageShare(description_package), "config", "default_kinematics.yaml"]
     )
     physical_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "physical_parameters.yaml"]
+        [FindPackageShare(description_package), "config", "physical_parameters.yaml"]
     )
     visual_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "visual_parameters.yaml"]
+        [FindPackageShare(description_package), "config", "visual_parameters.yaml"]
     )
 
     urdf = os.path.join(get_package_share_directory('rox_description'),
@@ -83,6 +84,7 @@ def launch_setup(context, *args, **kwargs):
             "xacro", " ", urdf, " ", 
             'arm_type:=', ur_type, " ",
             'use_gz:=', 'true', " ",
+            'use_ur_dc:=' , ur_dc
 
             ])
 
@@ -105,11 +107,10 @@ def launch_setup(context, *args, **kwargs):
     robot_description_kinematics = PathJoinSubstitution(
         [FindPackageShare(moveit_config_package), "config", "kinematics.yaml"]
     )
-    
-    joint_limits_yaml =os.path.join(
-        get_package_share_directory(str(moveit_config_package.perform(context))),
+
+    joint_limits_yaml = os.path.join(
+        get_package_share_directory('neo_rox_moveit2'),
         "config",
-        str(ur_type.perform(context)),
         str(moveit_joint_limits_file.perform(context)),
     )
 
@@ -120,8 +121,7 @@ def launch_setup(context, *args, **kwargs):
     robot_description_planning = {
         "robot_description_planning": load_yaml(
             str(moveit_config_package.perform(context)),
-            os.path.join("config", 
-                        str(ur_type.perform(context)),
+            os.path.join("config/", 
                         str(joint_limits_yaml_with_substitutions.param_file)),
         )
     }
@@ -324,6 +324,15 @@ def generate_launch_description():
         have to be updated.",
         )
     )
+    
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_ur_dc",
+            default_value="false",
+            description="Uses a shorter cabin box. Check with Neobotix, before selecting.",
+        )
+    )
+
     declared_arguments.append(
         DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz?")
     )

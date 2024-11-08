@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(neo_ur_moveit_config)
+project(neo_rox_moveit2)
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)

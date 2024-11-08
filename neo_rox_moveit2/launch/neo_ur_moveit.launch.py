@@ -39,9 +39,9 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration, P
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from ament_index_python.packages import get_package_share_directory
-from launch_ros.descriptions import ParameterValue
+from launch_ros.descriptions import ParameterValue, ParameterFile
 
-from neo_ur_moveit_config.launch_common import load_yaml
+from neo_rox_moveit2.launch_common import load_yaml
 
 def launch_setup(context, *args, **kwargs):
 
@@ -61,18 +61,19 @@ def launch_setup(context, *args, **kwargs):
     prefix = LaunchConfiguration("prefix")
     use_sim_time = LaunchConfiguration("use_sim_time")
     launch_rviz = LaunchConfiguration("launch_rviz")
+    ur_dc = LaunchConfiguration("use_ur_dc")
 
     joint_limit_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "joint_limits.yaml"]
+        [FindPackageShare(description_package), "config" "joint_limits.yaml"]
     )
     kinematics_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "default_kinematics.yaml"]
+        [FindPackageShare(description_package), "config", "default_kinematics.yaml"]
     )
     physical_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "physical_parameters.yaml"]
+        [FindPackageShare(description_package), "config", "physical_parameters.yaml"]
     )
     visual_params = PathJoinSubstitution(
-        [FindPackageShare(description_package), "config", ur_type, "visual_parameters.yaml"]
+        [FindPackageShare(description_package), "config", "visual_parameters.yaml"]
     )
 
     urdf = os.path.join(get_package_share_directory('rox_description'),
@@ -80,14 +81,17 @@ def launch_setup(context, *args, **kwargs):
         'rox.urdf.xacro')
    
     robot_description_content = Command([
-            "xacro", " ", urdf, " ", 'arm_type:=',
-            ur_type,
+            "xacro", " ", urdf, " ", 
+            'arm_type:=', ur_type, " ",
+            'use_gz:=', 'true', " ",
+            'use_ur_dc:=' , ur_dc
+
             ])
 
     robot_description = {"robot_description": robot_description_content}
 
     # MoveIt Configuration
-    srdf = os.path.join(get_package_share_directory('neo_ur_moveit_config'),
+    srdf = os.path.join(get_package_share_directory('neo_rox_moveit2'),
         'srdf',
         'rox.srdf.xacro')
 
@@ -104,10 +108,21 @@ def launch_setup(context, *args, **kwargs):
         [FindPackageShare(moveit_config_package), "config", "kinematics.yaml"]
     )
 
+    joint_limits_yaml = os.path.join(
+        get_package_share_directory('neo_rox_moveit2'),
+        "config",
+        str(moveit_joint_limits_file.perform(context)),
+    )
+
+    joint_limits_yaml_with_substitutions = ParameterFile(joint_limits_yaml, allow_substs=True)
+    # Evaluate the parameter file to apply dynamic substitutions
+    joint_limits_yaml_with_substitutions.evaluate(context)
+    # Load the YAML file with the applied substitutions
     robot_description_planning = {
         "robot_description_planning": load_yaml(
             str(moveit_config_package.perform(context)),
-            os.path.join("config", str(moveit_joint_limits_file.perform(context))),
+            os.path.join("config/", 
+                        str(joint_limits_yaml_with_substitutions.param_file)),
         )
     }
 
@@ -119,20 +134,35 @@ def launch_setup(context, *args, **kwargs):
             "start_state_max_bounds_error": 0.1,
         }
     }
-    ompl_planning_yaml = load_yaml("neo_ur_moveit_config", "config/ompl_planning.yaml")
+    ompl_planning_yaml = load_yaml(str(moveit_config_package.perform(context)), "config/ompl_planning.yaml")
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
 
     # Trajectory Execution Configuration
-    controllers_yaml = load_yaml("neo_ur_moveit_config", "config/" + ur_type.perform(context) + "_controllers.yaml")
+    controllers_yaml = os.path.join(
+        get_package_share_directory(str(moveit_config_package.perform(context))),
+        "config",
+        # str(ur_type.perform(context)),
+        "controllers.yaml",
+    )
+
+    controllers_yaml_with_substitutions = ParameterFile(controllers_yaml, allow_substs=True)
+    # Evaluate the parameter file to apply dynamic substitutions
+    controllers_yaml_with_substitutions.evaluate(context)
+    # Load the YAML file with the applied substitutions    
+    controllers_yaml_with_substitutions = load_yaml(
+        str(moveit_config_package.perform(context)),
+        os.path.join("config", 
+                    str(controllers_yaml_with_substitutions.param_file)),
+    )
 
     # the scaled_joint_trajectory_controller does not work on fake hardware
     change_controllers = context.perform_substitution(use_fake_hardware)
     if change_controllers == "true":
-        controllers_yaml["scaled_joint_trajectory_controller"]["default"] = False
-        controllers_yaml["joint_trajectory_controller"]["default"] = True
+        controllers_yaml_with_substitutions["scaled_joint_trajectory_controller"]["default"] = False
+        controllers_yaml_with_substitutions["joint_trajectory_controller"]["default"] = True
 
     moveit_controllers = {
-        "moveit_simple_controller_manager": controllers_yaml,
+        "moveit_simple_controller_manager": controllers_yaml_with_substitutions,
         "moveit_controller_manager": "moveit_simple_controller_manager/MoveItSimpleControllerManager",
     }
 
@@ -251,7 +281,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "moveit_config_package",
-            default_value="neo_ur_moveit_config",
+            default_value="neo_rox_moveit2",
             description="MoveIt config package with robot SRDF/XACRO files. Usually the argument \
         is not set, it enables use of a custom moveit config.",
         )
@@ -281,7 +311,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "moveit_joint_limits_file",
-            default_value="ur5e_joint_limits.yaml",
+            default_value="joint_limits.yaml",
             description="MoveIt joint limits that augment or override the values from the URDF robot_description.",
         )
     )
@@ -294,6 +324,15 @@ def generate_launch_description():
         have to be updated.",
         )
     )
+    
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "use_ur_dc",
+            default_value="false",
+            description="Uses a shorter cabin box. Check with Neobotix, before selecting.",
+        )
+    )
+
     declared_arguments.append(
         DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz?")
     )

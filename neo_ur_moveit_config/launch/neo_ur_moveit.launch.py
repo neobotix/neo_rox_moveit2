@@ -47,6 +47,7 @@ def launch_setup(context, *args, **kwargs):
 
     # Initialize Arguments
     ur_type = LaunchConfiguration("ur_type")
+    rox_type = LaunchConfiguration("rox_type")
     use_fake_hardware = LaunchConfiguration("use_fake_hardware")
     safety_limits = LaunchConfiguration("safety_limits")
     safety_pos_margin = LaunchConfiguration("safety_pos_margin")
@@ -60,6 +61,7 @@ def launch_setup(context, *args, **kwargs):
     prefix = LaunchConfiguration("prefix")
     use_sim_time = LaunchConfiguration("use_sim_time")
     launch_rviz = LaunchConfiguration("launch_rviz")
+    rox_typ = str(rox_type.perform(context))
 
     joint_limit_params = PathJoinSubstitution(
         [FindPackageShare(description_package), "config", ur_type, "joint_limits.yaml"]
@@ -80,7 +82,8 @@ def launch_setup(context, *args, **kwargs):
    
     robot_description_content = Command([
             "xacro", " ", urdf, " ", 'arm_type:=',
-            ur_type,
+            ur_type, " ",
+            'rox_type:=', rox_typ
             ])
 
     robot_description = {"robot_description": robot_description_content}
@@ -93,7 +96,8 @@ def launch_setup(context, *args, **kwargs):
     robot_description_semantic_content = ParameterValue(
         Command([
             "xacro", " ", srdf, " ", 'prefix:=',
-            prefix,
+            prefix, " ", 'rox_type:=',
+            rox_typ
             ]),
         value_type=str)
 
@@ -198,6 +202,14 @@ def generate_launch_description():
             "ur_type",
             description="Type/series of used UR robot.",
             choices=["ur3", "ur3e", "ur5", "ur5e", "ur10", "ur10e", "ur16e", "ur20"],
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "rox_type",
+            description="Type/series of used UR robot.",
+            default_value='argo',
+            choices=["argo", "argo-trio"],
         )
     )
     declared_arguments.append(

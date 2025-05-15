@@ -1,5 +1,5 @@
 # MoveIt uses this configuration for controller management
-moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
+moveit_controller_manager: moveit_ros_control_interface/Ros2ControlManager
 
 trajectory_execution:
   allowed_execution_duration_scaling: 1.2
@@ -17,22 +17,21 @@ moveit_simple_controller_manager:
     type: FollowJointTrajectory
     default: true
     joints:
-      - ur5shoulder_pan_joint
-      - ur5shoulder_lift_joint
-      - ur5elbow_joint
-      - ur5wrist_1_joint
-      - ur5wrist_2_joint
-      - ur5wrist_3_joint
-
+      - $(var prefix)shoulder_pan_joint
+      - $(var prefix)shoulder_lift_joint
+      - $(var prefix)elbow_joint
+      - $(var prefix)wrist_1_joint
+      - $(var prefix)wrist_2_joint
+      - $(var prefix)wrist_3_joint
 
   joint_trajectory_controller:
     action_ns: follow_joint_trajectory
     type: FollowJointTrajectory
     default: false
     joints:
-      - ur5shoulder_pan_joint
-      - ur5shoulder_lift_joint
-      - ur5elbow_joint
-      - ur5wrist_1_joint
-      - ur5wrist_2_joint
-      - ur5wrist_3_joint
+      - $(var prefix)shoulder_pan_joint
+      - $(var prefix)shoulder_lift_joint
+      - $(var prefix)elbow_joint
+      - $(var prefix)wrist_1_joint
+      - $(var prefix)wrist_2_joint
+      - $(var prefix)wrist_3_joint

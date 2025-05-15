@@ -4,7 +4,7 @@
   <name>neo_rox_moveit2</name>
   <version>2.2.10</version>
   <description>
-     Moveit package for mobile manipulator MMO 700
+     Moveit package for mobile manipulator EMROX
   </description>
   <maintainer email="ros@neobotix.de">Pradheep Padmanabhan</maintainer>
 

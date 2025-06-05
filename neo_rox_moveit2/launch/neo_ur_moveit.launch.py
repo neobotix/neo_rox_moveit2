@@ -67,7 +67,7 @@ def launch_setup(context, *args, **kwargs):
     urdf = os.path.join(get_package_share_directory('rox_description'),
         'urdf',
         'rox.urdf.xacro')
-    
+
     # MoveIt Configuration
     srdf = os.path.join(get_package_share_directory('neo_rox_moveit2'),
         'srdf',
@@ -92,8 +92,8 @@ def launch_setup(context, *args, **kwargs):
     # The scaled_joint_trajectory_controller does not work on mock hardware
     use_mock_hardware = context.perform_substitution(LaunchConfiguration("use_mock_hardware")).lower()
     if use_mock_hardware == "true" or simulation_enabled == "true":
-        controllers_yaml_dict["moveit_simple_controller_manager"]["scaled_joint_trajectory_controller"]["default"] = False
-        controllers_yaml_dict["moveit_simple_controller_manager"]["joint_trajectory_controller"]["default"] = True
+        controllers_yaml_dict["moveit_ros_control_interface"]["scaled_joint_trajectory_controller"]["default"] = False
+        controllers_yaml_dict["moveit_ros_control_interface"]["joint_trajectory_controller"]["default"] = True
 
     # Joint Limits Configuration
     joint_limits_yaml = os.path.join(
@@ -227,7 +227,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "use_sim_time",
-            default_value="false",
+            default_value="False",
             description='Make MoveIt to use simulation time.\n'
               '\t This is needed for the trajectory planing in simulation.\n'
               '\t Defaults to True if `use_gz` is True'
@@ -242,11 +242,11 @@ def generate_launch_description():
             '\t (same as "arm_type" argument)',
         )
     )
-    
+
     declared_arguments.append(
         DeclareLaunchArgument(
             "use_ur_dc",
-            default_value="false",
+            default_value="False",
             description="Uses a shorter cabin box. Check with Neobotix, before selecting.",
         )
     )
@@ -254,7 +254,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "use_gz",
-            default_value="false",
+            default_value="False",
             description="Whether to enable Gazebo simulation.",
         )
     )
@@ -262,13 +262,13 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "use_mock_hardware",
-            default_value="false",
+            default_value="False",
             description="Indicate whether robot is running with mock hardware mirroring command to its states.",
         )
     )
 
     declared_arguments.append(
-        DeclareLaunchArgument("launch_rviz", default_value="true", description="Launch RViz?")
+        DeclareLaunchArgument("launch_rviz", default_value="True", description="Launch RViz?")
     )
 
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])

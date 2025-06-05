@@ -7,7 +7,7 @@ trajectory_execution:
   allowed_start_tolerance: 0.01
   execution_duration_monitoring: false # May lead to unexpectedly aborted goals with scaled JTC
 
-moveit_simple_controller_manager:
+moveit_ros_control_interface:
   controller_names:
     - scaled_joint_trajectory_controller
     - joint_trajectory_controller
@@ -15,7 +15,7 @@ moveit_simple_controller_manager:
   scaled_joint_trajectory_controller:
     action_ns: follow_joint_trajectory
     type: FollowJointTrajectory
-    default: true
+    default: True
     joints:
       - $(var prefix)shoulder_pan_joint
       - $(var prefix)shoulder_lift_joint
@@ -27,7 +27,7 @@ moveit_simple_controller_manager:
   joint_trajectory_controller:
     action_ns: follow_joint_trajectory
     type: FollowJointTrajectory
-    default: false
+    default: False
     joints:
       - $(var prefix)shoulder_pan_joint
       - $(var prefix)shoulder_lift_joint

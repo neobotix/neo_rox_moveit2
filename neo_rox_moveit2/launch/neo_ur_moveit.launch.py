@@ -92,8 +92,8 @@ def launch_setup(context, *args, **kwargs):
     # The scaled_joint_trajectory_controller does not work on mock hardware
     use_mock_hardware = context.perform_substitution(LaunchConfiguration("use_mock_hardware")).lower()
     if use_mock_hardware == "true" or simulation_enabled == "true":
-        controllers_yaml_dict["moveit_ros_control_interface"]["scaled_joint_trajectory_controller"]["default"] = False
-        controllers_yaml_dict["moveit_ros_control_interface"]["joint_trajectory_controller"]["default"] = True
+        controllers_yaml_dict["moveit_simple_controller_manager"]["scaled_joint_trajectory_controller"]["default"] = False
+        controllers_yaml_dict["moveit_simple_controller_manager"]["joint_trajectory_controller"]["default"] = True
 
     # Joint Limits Configuration
     joint_limits_yaml = os.path.join(

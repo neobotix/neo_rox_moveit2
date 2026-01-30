@@ -177,9 +177,7 @@ def generate_launch_description():
             'arm_type', 
             default_value='fr3',
             description='Arm Types:\n'
-                        '\t Franka Emika: fr3, panda\n'
-                        '\t Elite Arms: ec66, cs66\n'
-                        '\t Universal Robotics (UR): ur5, ur10, ur5e, ur10e' 
+                        '\t Franka Emika: fr3\n'
         )
     )
 

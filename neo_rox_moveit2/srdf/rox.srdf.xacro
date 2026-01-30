@@ -99,23 +99,22 @@
   <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
 
   <!-- Common collisions for all rox drives-->
-  <disable_collisions link1="base_footprint" link2="cabinet_link" reason="Adjacent"/>
+   <disable_collisions link1="base_footprint" link2="cabinet_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="lidar_1_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="lidar_2_link" reason="Adjacent"/>
-  <disable_collisions link1="cabinet_link" link2="lidar_1_link" reason="Adjacent"/>
-  <disable_collisions link1="cabinet_link" link2="lidar_2_link" reason="Adjacent"/>
-  <disable_collisions link1="lidar_1_link" link2="lidar_2_link" reason="Adjacent"/>
-
-  <!-- UR Arm Collision Disables -->
   <disable_collisions link1="base_footprint" link2="${prefix_value}base_link_inertia" reason="Never"/>
   <disable_collisions link1="base_footprint" link2="${prefix_value}shoulder_link" reason="Never"/>
   <disable_collisions link1="lidar_1_link" link2="${prefix_value}base_link_inertia" reason="Never"/>
   <disable_collisions link1="lidar_1_link" link2="${prefix_value}shoulder_link" reason="Never"/>
+  <disable_collisions link1="lidar_1_link" link2="lidar_2_link" reason="Adjacent"/>
   <disable_collisions link1="lidar_2_link" link2="${prefix_value}base_link_inertia" reason="Never"/>
   <disable_collisions link1="lidar_2_link" link2="${prefix_value}shoulder_link" reason="Never"/>
   <disable_collisions link1="lidar_2_link" link2="${prefix_value}upper_arm_link" reason="Never"/>
+  <disable_collisions link1="cabinet_link" link2="lidar_1_link" reason="Adjacent"/>
+  <disable_collisions link1="cabinet_link" link2="lidar_2_link" reason="Adjacent"/>
   <disable_collisions link1="cabinet_link" link2="${prefix_value}base_link_inertia" reason="Adjacent"/>
   <disable_collisions link1="cabinet_link" link2="${prefix_value}shoulder_link" reason="Never"/>
+
   <disable_collisions link1="${prefix_value}base_link_inertia" link2="${prefix_value}shoulder_link" reason="Adjacent"/>
   <disable_collisions link1="${prefix_value}base_link_inertia" link2="${prefix_value}upper_arm_link" reason="Never"/>
   <disable_collisions link1="${prefix_value}base_link_inertia" link2="${prefix_value}wrist_1_link" reason="Never"/>

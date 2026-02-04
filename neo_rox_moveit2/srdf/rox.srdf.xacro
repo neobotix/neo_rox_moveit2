@@ -17,6 +17,8 @@
   <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
   <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
   <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
+  
+  <!-- Universal Robots Manipulator Group -->
   <group name="ur_manipulator">
       <joint name="${prefix_value}wrist_1_joint"/>
       <joint name="${prefix_value}wrist_2_joint"/>
@@ -26,8 +28,25 @@
       <joint name="${prefix_value}elbow_joint"/>
       <chain base_link="${prefix_value}base_link" tip_link="${prefix_value}tool0"/>
   </group>
+  
+  <!-- Franka FR3 Arm Group -->
+  <group name="fr3_arm">
+    <joint name="${prefix_value}fr3_joint1"/>
+    <joint name="${prefix_value}fr3_joint2"/>
+    <joint name="${prefix_value}fr3_joint3"/>
+    <joint name="${prefix_value}fr3_joint4"/>
+    <joint name="${prefix_value}fr3_joint5"/>
+    <joint name="${prefix_value}fr3_joint6"/>
+    <joint name="${prefix_value}fr3_joint7"/>
+    <chain base_link="${prefix_value}fr3_link0" tip_link="${prefix_value}fr3_link8"/>
+  </group>
+
+
+
 
   <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
+  
+  <!-- UR Manipulator States -->
   <group_state name="up" group="ur_manipulator">
     <joint name="${prefix_value}elbow_joint" value="0" />
     <joint name="${prefix_value}shoulder_lift_joint" value="-1.5707" />
@@ -45,10 +64,42 @@
     <joint name="${prefix_value}wrist_3_joint" value="4.75" />
   </group_state>
 
+  <!-- Franka FR3 Arm States -->
+  <group_state name="ready" group="fr3_arm">
+    <joint name="${prefix_value}fr3_joint1" value="0" />
+    <joint name="${prefix_value}fr3_joint2" value="-0.785" />
+    <joint name="${prefix_value}fr3_joint3" value="0" />
+    <joint name="${prefix_value}fr3_joint4" value="-2.356" />
+    <joint name="${prefix_value}fr3_joint5" value="0" />
+    <joint name="${prefix_value}fr3_joint6" value="1.571" />
+    <joint name="${prefix_value}fr3_joint7" value="0.785" />
+  </group_state>
+  <group_state name="home" group="fr3_arm">
+    <joint name="${prefix_value}fr3_joint1" value="0" />
+    <joint name="${prefix_value}fr3_joint2" value="0" />
+    <joint name="${prefix_value}fr3_joint3" value="0" />
+    <joint name="${prefix_value}fr3_joint4" value="0" />
+    <joint name="${prefix_value}fr3_joint5" value="0" />
+    <joint name="${prefix_value}fr3_joint6" value="0" />
+    <joint name="${prefix_value}fr3_joint7" value="0" />
+  </group_state>
+  <group_state name="transport" group="fr3_arm">
+    <joint name="${prefix_value}fr3_joint1" value="0" />
+    <joint name="${prefix_value}fr3_joint2" value="0.55" />
+    <joint name="${prefix_value}fr3_joint3" value="0" />
+    <joint name="${prefix_value}fr3_joint4" value="-2.3" />
+    <joint name="${prefix_value}fr3_joint5" value="0" />
+    <joint name="${prefix_value}fr3_joint6" value="2.85" />
+    <joint name="${prefix_value}fr3_joint7" value="0.785" />
+  </group_state>
+
+  <!--VIRTUAL JOINT: Purpose: this element defines a virtual joint between a robot link and an external frame of reference (considered fixed with respect to the robot)-->
+  <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="base_link" />
+
   <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
 
   <!-- Common collisions for all rox drives-->
-  <disable_collisions link1="base_footprint" link2="cabinet_link" reason="Adjacent"/>
+   <disable_collisions link1="base_footprint" link2="cabinet_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="lidar_1_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="lidar_2_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="${prefix_value}base_link_inertia" reason="Never"/>
@@ -80,6 +131,35 @@
   <disable_collisions link1="${prefix_value}tool0" link2="${prefix_value}wrist_2_link" reason="Never" />
   <disable_collisions link1="${prefix_value}tool0" link2="${prefix_value}wrist_3_link" reason="Adjacent" />
 
+  <!-- Franka FR3 Collision Disables -->
+  <disable_collisions link1="base_footprint" link2="${prefix_value}fr3_link0" reason="Never"/>
+  <disable_collisions link1="base_footprint" link2="${prefix_value}fr3_link1" reason="Never"/>
+  <disable_collisions link1="cabinet_link" link2="${prefix_value}fr3_link0" reason="Adjacent"/>
+  <disable_collisions link1="cabinet_link" link2="${prefix_value}fr3_link1" reason="Never"/>
+  <disable_collisions link1="lidar_1_link" link2="${prefix_value}fr3_link0" reason="Never"/>
+  <disable_collisions link1="lidar_1_link" link2="${prefix_value}fr3_link1" reason="Never"/>
+  <disable_collisions link1="lidar_2_link" link2="${prefix_value}fr3_link0" reason="Never"/>
+  <disable_collisions link1="lidar_2_link" link2="${prefix_value}fr3_link1" reason="Never"/>
+  <disable_collisions link1="lidar_2_link" link2="${prefix_value}fr3_link2" reason="Never"/>
+  
+  <!-- Franka FR3 Adjacent Link Collisions -->
+  <disable_collisions link1="${prefix_value}fr3_link0" link2="${prefix_value}fr3_link1" reason="Adjacent"/>
+  <disable_collisions link1="${prefix_value}fr3_link0" link2="${prefix_value}fr3_link2" reason="Never"/>
+  <disable_collisions link1="${prefix_value}fr3_link1" link2="${prefix_value}fr3_link2" reason="Adjacent"/>
+  <disable_collisions link1="${prefix_value}fr3_link1" link2="${prefix_value}fr3_link3" reason="Never"/>
+  <disable_collisions link1="${prefix_value}fr3_link2" link2="${prefix_value}fr3_link3" reason="Adjacent"/>
+  <disable_collisions link1="${prefix_value}fr3_link2" link2="${prefix_value}fr3_link4" reason="Never"/>
+  <disable_collisions link1="${prefix_value}fr3_link3" link2="${prefix_value}fr3_link4" reason="Adjacent"/>
+  <disable_collisions link1="${prefix_value}fr3_link3" link2="${prefix_value}fr3_link5" reason="Never"/>
+  <disable_collisions link1="${prefix_value}fr3_link4" link2="${prefix_value}fr3_link5" reason="Adjacent"/>
+  <disable_collisions link1="${prefix_value}fr3_link4" link2="${prefix_value}fr3_link6" reason="Never"/>
+  <disable_collisions link1="${prefix_value}fr3_link5" link2="${prefix_value}fr3_link6" reason="Adjacent"/>
+  <disable_collisions link1="${prefix_value}fr3_link5" link2="${prefix_value}fr3_link7" reason="Never"/>
+  <disable_collisions link1="${prefix_value}fr3_link6" link2="${prefix_value}fr3_link7" reason="Adjacent"/>
+  <disable_collisions link1="${prefix_value}fr3_link6" link2="${prefix_value}fr3_link8" reason="Never"/>
+  <disable_collisions link1="${prefix_value}fr3_link7" link2="${prefix_value}fr3_link8" reason="Adjacent"/>
+  
+  <!-- ROX Platform Specific Configurations -->
   <xacro:if value="${rox_typ == 'argo' or rox_typ == 'argo-trio'}">
     <xacro:include filename="$(find neo_rox_moveit2)/srdf/rox_argo.srdf.xacro" />
     <xacro:rox_argo/>
@@ -92,6 +172,10 @@
 
   <!-- Gripper Conditions -->
   <xacro:unless value="${gripper == ''}">
+    <xacro:if value="${gripper == 'franka_hand'}">
+      <!-- Franka hand is already defined above in the fr3_hand group -->
+    </xacro:if>
+
     <xacro:if value="${gripper == '2f_140'}">
       <xacro:include filename="$(find neo_rox_moveit2)/srdf/robotiq_2f_140.srdf.xacro" />
       <xacro:robotiq_2f_140 />

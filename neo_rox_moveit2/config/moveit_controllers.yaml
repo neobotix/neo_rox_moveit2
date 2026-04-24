@@ -11,6 +11,14 @@ moveit_simple_controller_manager:
   controller_names:
     - scaled_joint_trajectory_controller
     - joint_trajectory_controller
+    - linear_axis_controller
+
+  linear_axis_controller:
+    type: FollowJointTrajectory
+    action_ns: follow_joint_trajectory
+    default: true
+    joints:
+      - linear_axis_slide_joint
 
   scaled_joint_trajectory_controller:
     action_ns: follow_joint_trajectory

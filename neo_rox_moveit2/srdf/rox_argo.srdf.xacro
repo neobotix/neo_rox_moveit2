@@ -46,15 +46,7 @@
     <disable_collisions link1="wheel_front_right_link" link2="${prefix_value}base_link_inertia" reason="Never"/>
     <disable_collisions link1="wheel_front_right_link" link2="${prefix_value}shoulder_link" reason="Never"/>
     <disable_collisions link1="wheel_front_right_link" link2="${prefix_value}upper_arm_link" reason="Never"/>
-
-    <disable_collisions link1="base_footprint" link2="linear_axis_link" reason="Never"/>
-    <disable_collisions link1="cabinet_link" link2="linear_axis_link" reason="Never"/>
-    <disable_collisions link1="lidar_1_link" link2="linear_axis_link" reason="Never"/>
-    <disable_collisions link1="lidar_2_link" link2="linear_axis_link" reason="Never"/>
-    <disable_collisions link1="caster_front_left_link" link2="linear_axis_link" reason="Never"/>
-    <disable_collisions link1="caster_front_right_link" link2="linear_axis_link" reason="Never"/>
-    <disable_collisions link1="wheel_front_left_link" link2="linear_axis_link" reason="Never"/>
-    <disable_collisions link1="wheel_front_right_link" link2="linear_axis_link" reason="Never"/>
+    <disable_collisions link1="linear_axis_fixed_link" link2="linear_axis_slide_link" reason="Never"/>
 
     <xacro:if value="${rox_typ == 'argo'}">
       <disable_collisions link1="base_footprint" link2="caster_back_left_link" reason="Adjacent"/>
@@ -107,18 +99,6 @@
       <disable_collisions link1="wheel_back_right_link" link2="${prefix_value}base_link_inertia" reason="Never"/>
       <disable_collisions link1="wheel_back_right_link" link2="${prefix_value}shoulder_link" reason="Never"/>
       <disable_collisions link1="wheel_back_right_link" link2="${prefix_value}upper_arm_link" reason="Never"/>
-      <disable_collisions link1="base_footprint" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="cabinet_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="lidar_1_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="lidar_2_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="caster_front_left_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="caster_front_right_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="wheel_front_left_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="wheel_front_right_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="caster_back_left_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="caster_back_right_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="wheel_back_left_link" link2="linear_axis_link" reason="Never"/>
-      <disable_collisions link1="wheel_back_right_link" link2="linear_axis_link" reason="Never"/>
     </xacro:if>
 
     <xacro:if value="${rox_typ == 'argo-trio'}">

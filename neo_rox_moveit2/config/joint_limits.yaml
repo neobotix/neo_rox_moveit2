@@ -5,22 +5,22 @@
 # cases. For specific applications, higher values might lead to better execution performance.
 
 joint_limits:
-  $(var prefix)shoulder_pan_joint:
+  $(var arm1_prefix)shoulder_pan_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
-  $(var prefix)shoulder_lift_joint:
+  $(var arm1_prefix)shoulder_lift_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
-  $(var prefix)elbow_joint:
+  $(var arm1_prefix)elbow_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
-  $(var prefix)wrist_1_joint:
+  $(var arm1_prefix)wrist_1_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
-  $(var prefix)wrist_2_joint:
+  $(var arm1_prefix)wrist_2_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
-  $(var prefix)wrist_3_joint:
+  $(var arm1_prefix)wrist_3_joint:
     has_acceleration_limits: true
     max_acceleration: 5.0
   linear_axis_slide_joint:

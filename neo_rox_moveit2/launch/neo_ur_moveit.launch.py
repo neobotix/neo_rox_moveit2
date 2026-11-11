@@ -30,6 +30,7 @@
 # Contributor: Adarsh Karan K P
 
 import os
+from copy import deepcopy
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, RegisterEventHandler
@@ -44,22 +45,93 @@ from pathlib import Path
 from neo_rox_moveit2.launch_common import load_yaml
 from launch.event_handlers import OnProcessExit
 
+
+UR_JOINT_SUFFIXES = (
+    "shoulder_pan_joint",
+    "shoulder_lift_joint",
+    "elbow_joint",
+    "wrist_1_joint",
+    "wrist_2_joint",
+    "wrist_3_joint",
+)
+
+
+def configure_moveit_controllers(config, arm_prefixes, use_unscaled_controller):
+    """Expand the single-arm controller templates for one or two UR arms."""
+    manager = config["moveit_simple_controller_manager"]
+    scaled_name = "scaled_joint_trajectory_controller"
+    unscaled_name = "joint_trajectory_controller"
+
+    if len(arm_prefixes) == 1:
+        controller_pairs = [(scaled_name, unscaled_name)]
+    else:
+        scaled_template = manager.pop(scaled_name)
+        unscaled_template = manager.pop(unscaled_name)
+        manager["controller_names"] = [
+            name
+            for name in manager["controller_names"]
+            if name not in (scaled_name, unscaled_name)
+        ]
+        controller_pairs = []
+
+        for arm_name, joint_prefix in arm_prefixes:
+            arm_scaled_name = f"{arm_name}_{scaled_name}"
+            arm_unscaled_name = f"{arm_name}_{unscaled_name}"
+
+            for controller_name, template in (
+                (arm_scaled_name, scaled_template),
+                (arm_unscaled_name, unscaled_template),
+            ):
+                controller = deepcopy(template)
+                controller["joints"] = [
+                    f"{joint_prefix}{joint}" for joint in UR_JOINT_SUFFIXES
+                ]
+                manager[controller_name] = controller
+                manager["controller_names"].append(controller_name)
+
+            controller_pairs.append((arm_scaled_name, arm_unscaled_name))
+
+    for arm_scaled_name, arm_unscaled_name in controller_pairs:
+        manager[arm_scaled_name]["default"] = not use_unscaled_controller
+        manager[arm_unscaled_name]["default"] = use_unscaled_controller
+
+
+def add_arm2_planning_parameters(moveit_config, arm1_prefix, arm2_prefix):
+    """Reuse arm 1 kinematics and joint-limit settings for arm 2."""
+    kinematics = moveit_config.robot_description_kinematics[
+        "robot_description_kinematics"
+    ]
+    kinematics["ur_manipulator_arm2"] = deepcopy(kinematics["ur_manipulator"])
+
+    joint_limits = moveit_config.joint_limits["robot_description_planning"][
+        "joint_limits"
+    ]
+    for joint in UR_JOINT_SUFFIXES:
+        joint_limits[f"{arm2_prefix}{joint}"] = deepcopy(
+            joint_limits[f"{arm1_prefix}{joint}"]
+        )
+
+
 def launch_setup(context, *args, **kwargs):
 
     # Initialize Arguments
     rox_type = LaunchConfiguration("rox_type")
     arm_type = LaunchConfiguration("arm_type")
+    arm2_type = LaunchConfiguration("arm2_type")
     gripper_type = LaunchConfiguration("gripper_type")
     use_mock = LaunchConfiguration("use_mock_hardware")
 
     # General arguments
     moveit_config_package = LaunchConfiguration("moveit_config_package")
-    prefix = LaunchConfiguration("prefix")
+    arm1_prefix = LaunchConfiguration("arm1_prefix")
+    arm2_prefix = LaunchConfiguration("arm2_prefix")
     use_sim_time = LaunchConfiguration("use_sim_time")
     launch_rviz = LaunchConfiguration("launch_rviz")
     ur_dc = LaunchConfiguration("use_ur_dc")
     use_gz = LaunchConfiguration("use_gz")
-    simulation_enabled = context.perform_substitution(LaunchConfiguration("use_gz")).lower()
+    simulation_enabled = context.perform_substitution(
+        LaunchConfiguration("use_gz")
+    ).lower()
 
     if simulation_enabled == "true":
         use_sim_time = True
@@ -79,7 +151,9 @@ def launch_setup(context, *args, **kwargs):
         "config",
         "moveit_controllers.yaml",
     )
-    controllers_yaml_with_substitutions = ParameterFile(controllers_yaml, allow_substs=True)
+    controllers_yaml_with_substitutions = ParameterFile(
+        controllers_yaml, allow_substs=True
+    )
     # Evaluate the parameter file to apply dynamic substitutions
     controllers_yaml_with_substitutions.evaluate(context)
     
@@ -89,11 +163,21 @@ def launch_setup(context, *args, **kwargs):
         str(controllers_yaml_with_substitutions.param_file)
     )
 
-    # The scaled_joint_trajectory_controller does not work on mock hardware
-    use_mock_hardware = context.perform_substitution(LaunchConfiguration("use_mock_hardware")).lower()
-    if use_mock_hardware == "true" or simulation_enabled == "true":
-        controllers_yaml_dict["moveit_simple_controller_manager"]["scaled_joint_trajectory_controller"]["default"] = False
-        controllers_yaml_dict["moveit_simple_controller_manager"]["joint_trajectory_controller"]["default"] = True
+    dual_arm_enabled = bool(arm2_type.perform(context))
+    arm_prefixes = [("arm1", arm1_prefix.perform(context))]
+    if dual_arm_enabled:
+        arm_prefixes.append(("arm2", arm2_prefix.perform(context)))
+
+    # The scaled_joint_trajectory_controller does not work on mock hardware.
+    use_mock_hardware = context.perform_substitution(
+        LaunchConfiguration("use_mock_hardware")
+    ).lower()
+    use_unscaled_controller = (
+        use_mock_hardware == "true" or simulation_enabled == "true"
+    )
+    configure_moveit_controllers(
+        controllers_yaml_dict, arm_prefixes, use_unscaled_controller
+    )
 
     # Joint Limits Configuration
     joint_limits_yaml = os.path.join(
@@ -101,7 +185,9 @@ def launch_setup(context, *args, **kwargs):
         "config",
         "joint_limits.yaml",
     )
-    joint_limits_yaml_with_substitutions = ParameterFile(joint_limits_yaml, allow_substs=True)
+    joint_limits_yaml_with_substitutions = ParameterFile(
+        joint_limits_yaml, allow_substs=True
+    )
     # Evaluate the parameter file to apply dynamic substitutions
     joint_limits_yaml_with_substitutions.evaluate(context)
     joint_limits_yaml = os.path.join(
@@ -113,7 +199,10 @@ def launch_setup(context, *args, **kwargs):
     moveit_config = (
         MoveItConfigsBuilder(robot_name="rox_ur", package_name="neo_rox_moveit2")
         .robot_description_semantic(file_path=srdf, mappings={
-            "prefix": prefix,
+            "prefix": arm1_prefix,
+            "arm1_prefix": arm1_prefix,
+            "arm2_prefix": arm2_prefix,
+            "arm2_type": arm2_type,
             "rox_type": rox_type,
             "gripper_type": gripper_type,
             })
@@ -121,6 +210,9 @@ def launch_setup(context, *args, **kwargs):
             "use_gz": use_gz,
             "rox_type": rox_type,
             "arm_type": arm_type,
+            "arm2_type": arm2_type,
+            "arm1_prefix": arm1_prefix,
+            "arm2_prefix": arm2_prefix,
             "use_ur_dc": ur_dc,
             "gripper_type": gripper_type,
             "force_abs_paths": use_gz,
@@ -130,6 +222,12 @@ def launch_setup(context, *args, **kwargs):
         .joint_limits(file_path=joint_limits_yaml)
         .to_moveit_configs()
     )
+    if dual_arm_enabled:
+        add_arm2_planning_parameters(
+            moveit_config,
+            arm1_prefix.perform(context),
+            arm2_prefix.perform(context),
+        )
     # Override the trajectory_execution with the modified dictionary
     moveit_config.trajectory_execution = controllers_yaml_dict
 
@@ -209,6 +307,14 @@ def generate_launch_description():
 
     declared_arguments.append(
         DeclareLaunchArgument(
+            'arm2_type',
+            default_value='',
+            description='Optional second UR arm type. Leave empty for single-arm operation.',
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
             'gripper_type', default_value='',
             choices=['', '2f_140', '2f_85', 'epick'],
             description='Gripper Types - Supported Robots [mpo-700, mpo-500]\n\t'
@@ -237,9 +343,24 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "prefix",
-            default_value='',
-            description='Prefix of the joint names in controllers configuration.\n'
-            '\t (same as "arm_type" argument)',
+            default_value='arm1_',
+            description='Deprecated alias used as the default for arm1_prefix.',
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "arm1_prefix",
+            default_value=LaunchConfiguration("prefix"),
+            description='Joint and link prefix for arm 1.',
+        )
+    )
+
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "arm2_prefix",
+            default_value='arm2_',
+            description='Joint and link prefix for arm 2.',
         )
     )
 

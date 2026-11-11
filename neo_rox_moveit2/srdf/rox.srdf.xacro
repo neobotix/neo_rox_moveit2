@@ -4,11 +4,16 @@
     A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rox">
-  <xacro:arg name="prefix" default=""/>
+  <xacro:arg name="prefix" default="arm1_"/>
+  <xacro:arg name="arm1_prefix" default="$(arg prefix)"/>
+  <xacro:arg name="arm2_prefix" default="arm2_"/>
+  <xacro:arg name="arm2_type" default=""/>
   <xacro:arg name="rox_type" default="argo"/>
   <xacro:arg name="gripper_type" default=""/>
 
-  <xacro:property name="prefix_value" value="$(arg prefix)"/>
+  <xacro:property name="prefix_value" value="$(arg arm1_prefix)"/>
+  <xacro:property name="arm2_prefix_value" value="$(arg arm2_prefix)"/>
+  <xacro:property name="arm2" value="$(arg arm2_type)"/>
   <xacro:property name="rox_typ" value="$(arg rox_type)"/>
   <xacro:property name="gripper" value="$(arg gripper_type)"/>
 
@@ -17,25 +22,31 @@
   <!--JOINTS: When a joint is specified, the child link of that joint (which will always exist) is automatically included-->
   <!--CHAINS: When a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group-->
   <!--SUBGROUPS: Groups can also be formed by referencing to already defined group names-->
-  <group name="ur_manipulator">
-      <joint name="${prefix_value}wrist_1_joint"/>
-      <joint name="${prefix_value}wrist_2_joint"/>
-      <joint name="${prefix_value}wrist_3_joint"/>
-      <joint name="${prefix_value}shoulder_pan_joint"/>
-      <joint name="${prefix_value}shoulder_lift_joint"/>
-      <joint name="${prefix_value}elbow_joint"/>
-      <chain base_link="${prefix_value}base_link" tip_link="${prefix_value}tool0"/>
-  </group>
+  <xacro:macro name="ur_planning_group" params="group_name joint_prefix">
+    <group name="${group_name}">
+        <joint name="${joint_prefix}wrist_1_joint"/>
+        <joint name="${joint_prefix}wrist_2_joint"/>
+        <joint name="${joint_prefix}wrist_3_joint"/>
+        <joint name="${joint_prefix}shoulder_pan_joint"/>
+        <joint name="${joint_prefix}shoulder_lift_joint"/>
+        <joint name="${joint_prefix}elbow_joint"/>
+        <chain base_link="${joint_prefix}base_link" tip_link="${joint_prefix}tool0"/>
+    </group>
 
-  <!--GROUP STATES: Purpose: Define a named state for a particular group, in terms of joint values. This is useful to define states like 'folded arms'-->
-  <group_state name="home" group="ur_manipulator">
-    <joint name="${prefix_value}elbow_joint" value="0.112" />
-    <joint name="${prefix_value}shoulder_lift_joint" value="-2.775" />
-    <joint name="${prefix_value}shoulder_pan_joint" value="3.622" />
-    <joint name="${prefix_value}wrist_1_joint" value="-3.020" />
-    <joint name="${prefix_value}wrist_2_joint" value="0.065" />
-    <joint name="${prefix_value}wrist_3_joint" value="0.203" />
-  </group_state>
+    <group_state name="home" group="${group_name}">
+      <joint name="${joint_prefix}elbow_joint" value="0.112" />
+      <joint name="${joint_prefix}shoulder_lift_joint" value="-2.775" />
+      <joint name="${joint_prefix}shoulder_pan_joint" value="3.622" />
+      <joint name="${joint_prefix}wrist_1_joint" value="-3.020" />
+      <joint name="${joint_prefix}wrist_2_joint" value="0.065" />
+      <joint name="${joint_prefix}wrist_3_joint" value="0.203" />
+    </group_state>
+  </xacro:macro>
+
+  <xacro:ur_planning_group group_name="ur_manipulator" joint_prefix="${prefix_value}"/>
+  <xacro:unless value="${arm2 == ''}">
+    <xacro:ur_planning_group group_name="ur_manipulator_arm2" joint_prefix="${arm2_prefix_value}"/>
+  </xacro:unless>
 
   <group name="linear_axis">
       <link name="linear_axis_slide_link"/>
@@ -52,43 +63,50 @@
 
   <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
 
+  <xacro:macro name="disable_ur_collisions" params="link_prefix">
+    <disable_collisions link1="base_footprint" link2="${link_prefix}base_link_inertia" reason="Never"/>
+    <disable_collisions link1="base_footprint" link2="${link_prefix}shoulder_link" reason="Never"/>
+    <disable_collisions link1="lidar_1_link" link2="${link_prefix}base_link_inertia" reason="Never"/>
+    <disable_collisions link1="lidar_1_link" link2="${link_prefix}shoulder_link" reason="Never"/>
+    <disable_collisions link1="lidar_2_link" link2="${link_prefix}base_link_inertia" reason="Never"/>
+    <disable_collisions link1="lidar_2_link" link2="${link_prefix}shoulder_link" reason="Never"/>
+    <disable_collisions link1="lidar_2_link" link2="${link_prefix}upper_arm_link" reason="Never"/>
+    <disable_collisions link1="cabinet_link" link2="${link_prefix}base_link_inertia" reason="Adjacent"/>
+    <disable_collisions link1="cabinet_link" link2="${link_prefix}shoulder_link" reason="Never"/>
+
+    <disable_collisions link1="${link_prefix}base_link_inertia" link2="${link_prefix}shoulder_link" reason="Adjacent"/>
+    <disable_collisions link1="${link_prefix}base_link_inertia" link2="${link_prefix}upper_arm_link" reason="Never"/>
+    <disable_collisions link1="${link_prefix}base_link_inertia" link2="${link_prefix}wrist_1_link" reason="Never"/>
+    <disable_collisions link1="${link_prefix}base_link_inertia" link2="${link_prefix}wrist_2_link" reason="Never"/>
+    <disable_collisions link1="${link_prefix}forearm_link" link2="${link_prefix}upper_arm_link" reason="Adjacent"/>
+    <disable_collisions link1="${link_prefix}forearm_link" link2="${link_prefix}wrist_1_link" reason="Adjacent"/>
+    <disable_collisions link1="${link_prefix}shoulder_link" link2="${link_prefix}upper_arm_link" reason="Adjacent"/>
+    <disable_collisions link1="${link_prefix}shoulder_link" link2="${link_prefix}wrist_1_link" reason="Never"/>
+    <disable_collisions link1="${link_prefix}shoulder_link" link2="${link_prefix}wrist_2_link" reason="Never"/>
+    <disable_collisions link1="${link_prefix}wrist_1_link" link2="${link_prefix}wrist_2_link" reason="Adjacent"/>
+    <disable_collisions link1="${link_prefix}wrist_1_link" link2="${link_prefix}wrist_3_link" reason="Never"/>
+    <disable_collisions link1="${link_prefix}wrist_2_link" link2="${link_prefix}wrist_3_link" reason="Adjacent"/>
+    <disable_collisions link1="${link_prefix}tool0" link2="${link_prefix}wrist_1_link" reason="Never" />
+    <disable_collisions link1="${link_prefix}tool0" link2="${link_prefix}wrist_2_link" reason="Never" />
+    <disable_collisions link1="${link_prefix}tool0" link2="${link_prefix}wrist_3_link" reason="Adjacent" />
+    <disable_collisions link1="${link_prefix}base_link_inertia" link2="linear_axis_slide_link" reason="Never"/>
+  </xacro:macro>
+
   <!-- Common collisions for all rox drives-->
   <disable_collisions link1="base_footprint" link2="cabinet_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="lidar_1_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="lidar_2_link" reason="Adjacent"/>
   <disable_collisions link1="base_footprint" link2="linear_axis" reason="Never"/>
   <disable_collisions link1="base_footprint" link2="linear_axis_slide_link" reason="Adjacent"/>
-  <disable_collisions link1="base_footprint" link2="${prefix_value}base_link_inertia" reason="Never"/>
-  <disable_collisions link1="base_footprint" link2="${prefix_value}shoulder_link" reason="Never"/>
-  <disable_collisions link1="lidar_1_link" link2="${prefix_value}base_link_inertia" reason="Never"/>
-  <disable_collisions link1="lidar_1_link" link2="${prefix_value}shoulder_link" reason="Never"/>
   <disable_collisions link1="lidar_1_link" link2="lidar_2_link" reason="Adjacent"/>
-  <disable_collisions link1="lidar_2_link" link2="${prefix_value}base_link_inertia" reason="Never"/>
-  <disable_collisions link1="lidar_2_link" link2="${prefix_value}shoulder_link" reason="Never"/>
-  <disable_collisions link1="lidar_2_link" link2="${prefix_value}upper_arm_link" reason="Never"/>
   <disable_collisions link1="cabinet_link" link2="lidar_1_link" reason="Adjacent"/>
   <disable_collisions link1="cabinet_link" link2="lidar_2_link" reason="Adjacent"/>
   <disable_collisions link1="cabinet_link" link2="linear_axis_fixed_link" reason="Adjacent"/>
-  <disable_collisions link1="cabinet_link" link2="${prefix_value}base_link_inertia" reason="Adjacent"/>
-  <disable_collisions link1="cabinet_link" link2="${prefix_value}shoulder_link" reason="Never"/>
 
-  <disable_collisions link1="${prefix_value}base_link_inertia" link2="${prefix_value}shoulder_link" reason="Adjacent"/>
-  <disable_collisions link1="${prefix_value}base_link_inertia" link2="${prefix_value}upper_arm_link" reason="Never"/>
-  <disable_collisions link1="${prefix_value}base_link_inertia" link2="${prefix_value}wrist_1_link" reason="Never"/>
-  <disable_collisions link1="${prefix_value}base_link_inertia" link2="${prefix_value}wrist_2_link" reason="Never"/>
-  <disable_collisions link1="${prefix_value}forearm_link" link2="${prefix_value}upper_arm_link" reason="Adjacent"/>
-  <disable_collisions link1="${prefix_value}forearm_link" link2="${prefix_value}wrist_1_link" reason="Adjacent"/>
-  <disable_collisions link1="${prefix_value}shoulder_link" link2="${prefix_value}upper_arm_link" reason="Adjacent"/>
-  <disable_collisions link1="${prefix_value}shoulder_link" link2="${prefix_value}wrist_1_link" reason="Never"/>
-  <disable_collisions link1="${prefix_value}shoulder_link" link2="${prefix_value}wrist_2_link" reason="Never"/>
-  <disable_collisions link1="${prefix_value}wrist_1_link" link2="${prefix_value}wrist_2_link" reason="Adjacent"/>
-  <disable_collisions link1="${prefix_value}wrist_1_link" link2="${prefix_value}wrist_3_link" reason="Never"/>
-  <disable_collisions link1="${prefix_value}wrist_2_link" link2="${prefix_value}wrist_3_link" reason="Adjacent"/>
-  <disable_collisions link1="${prefix_value}tool0" link2="${prefix_value}wrist_1_link" reason="Never" />
-  <disable_collisions link1="${prefix_value}tool0" link2="${prefix_value}wrist_2_link" reason="Never" />
-  <disable_collisions link1="${prefix_value}tool0" link2="${prefix_value}wrist_3_link" reason="Adjacent" />
-
-  <disable_collisions link1="${prefix_value}base_link_inertia" link2="linear_axis_slide_link" reason="Never"/>
+  <xacro:disable_ur_collisions link_prefix="${prefix_value}"/>
+  <xacro:unless value="${arm2 == ''}">
+    <xacro:disable_ur_collisions link_prefix="${arm2_prefix_value}"/>
+  </xacro:unless>
 
   <xacro:if value="${rox_typ == 'argo' or rox_typ == 'argo-trio'}">
     <xacro:include filename="$(find neo_rox_moveit2)/srdf/rox_argo.srdf.xacro" />
